@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>New Sheet Data</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body { font-family: Arial; margin: 10px; background: #f8f9fa; }
+  h2 { text-align: center; color: #333; font-size: 1.5em; }
+  input, select { display: block; margin: 10px auto; padding: 10px; width: 90%; max-width: 350px; border-radius: 6px; border: 1px solid #ccc; font-size: 16px; }
+
+  .table-container {
+    max-height: 500px;
+    overflow-y: auto;
+    overflow-x: auto;
+    border: 1px solid #ddd;
+    background: white;
+  }
+
+  table { width: 100%; border-collapse: collapse; min-width: 1200px; }
+  th, td { padding: 8px; border: 1px solid #ddd; text-align: left; white-space: pre-line; }
+  th { background: #f0f0f0; position: sticky; top: 0; cursor: pointer; z-index: 1; }
+  th.sorted-asc::after { content: " ▲"; }
+  th.sorted-desc::after { content: " ▼"; }
+  tr:hover { background-color: #f1f1f1; }
+  .highlight { background-color: yellow; }
+
+  @media screen and (max-width: 600px) {
+    table { font-size: 12px; min-width: 800px; }
+    input, select { font-size: 14px; padding: 8px; width: 95%; }
+  }
+</style>
+</head>
+<body>
+
+<h2>New Sheet Data</h2>
+
+<input type="text" id="searchInput" placeholder="Search..." onkeyup="updateTable()">
+<select id="filterDropdown" onchange="updateTable()">
+  <option value="">All Clients</option>
+</select>
+
+<div class="table-container">
+  <table id="dataTable">
+    <thead></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<script>
+// Your Google Sheet CSV link (read-only)
+const sheetURL = 'https://docs.google.com/spreadsheets/d/1naM9QUQa0PpDWITE7lYPCazNwdpLBpGLQCHsYWmG-nY/export?format=csv&id=1naM9QUQa0PpDWITE7lYPCazNwdpLBpGLQCHsYWmG-nY&gid=0';
+
+let allRows = [];
+let sortColumn = null;
+let sortAsc = true;
+
+fetch(sheetURL)
+  .then(res => res.text())
+  .then(csv => {
+    // Parse CSV including multi-line headers
+    allRows = csv.split('\n').map(r => r.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/));
+    const headers = allRows[0];
+    const bodyRows = allRows.slice(1);
+
+    // Populate dropdown (assume "Client" column at index 10, adjust if needed)
+    const filterCol = 10; 
+    const dropdown = document.getElementById('filterDropdown');
+    const uniqueValues = [...new Set(bodyRows.map(r => r[filterCol]))].filter(c => c);
+    uniqueValues.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = c;
+      dropdown.appendChild(opt);
+    });
+
+    // Create table header with sortable columns
+    const table = document.getElementById('dataTable');
+    table.querySelector('thead').innerHTML = '<tr>' + headers.map((h, idx) => `<th onclick="sortTable(${idx})">${h}</th>`).join('') + '</tr>';
+
+    updateTable();
+  });
+
+// Render table with highlighted search matches
+function renderTable(rows, highlightText = '') {
+  const tbody = document.querySelector('#dataTable tbody');
+  tbody.innerHTML = rows.map(r => {
+    const tds = r.map(cell => {
+      if (!highlightText) return `<td>${cell}</td>`;
+      const regex = new RegExp(`(${highlightText})`, 'gi');
+      const highlighted = cell.replace(regex, '<span class="highlight">$1</span>');
+      return `<td>${highlighted}</td>`;
+    });
+    return '<tr>' + tds.join('') + '</tr>';
+  }).join('');
+}
+
+// Filter + search + sort
+function updateTable() {
+  const searchVal = document.getElementById('searchInput').value.toLowerCase();
+  const filterVal = document.getElementById('filterDropdown').value;
+
+  let filtered = allRows.slice(1);
+
+  if (filterVal) filtered = filtered.filter(r => r[10] === filterVal); // filter column
+  if (searchVal) filtered = filtered.filter(r => r.join(' ').toLowerCase().includes(searchVal));
+
+  if (sortColumn !== null) {
+    filtered.sort((a, b) => {
+      const valA = a[sortColumn] || '';
+      const valB = b[sortColumn] || '';
+      if (!isNaN(valA) && !isNaN(valB)) return sortAsc ? valA - valB : valB - valA;
+      return sortAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+    });
+  }
+
+  renderTable(filtered, searchVal);
+}
+
+// Sort columns
+function sortTable(colIndex) {
+  const ths = document.querySelectorAll('#dataTable th');
+  ths.forEach(th => th.classList.remove('sorted-asc', 'sorted-desc'));
+
+  if (sortColumn === colIndex) sortAsc = !sortAsc;
+  else { sortColumn = colIndex; sortAsc = true; }
+
+  ths[colIndex].classList.add(sortAsc ? 'sorted-asc' : 'sorted-desc');
+
+  updateTable();
+}
+</script>
+
+</body>
+</html>
