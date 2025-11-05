@@ -89,9 +89,7 @@
     border-bottom: 1px solid #ddd;
   }
 
-  th {
-    background-color: #f0f0f0;
-  }
+  th { background-color: #f0f0f0; }
 
   .place-link {
     color: #1a73e8;
@@ -100,6 +98,23 @@
   }
 
   .place-link:hover { color: #155ab6; }
+
+  /* Footer */
+  footer {
+    margin-top: 40px;
+    padding: 20px;
+    text-align: center;
+    font-size: 16px;
+    color: #555;
+  }
+
+  footer a {
+    color: #E1306C; /* Instagram color */
+    text-decoration: none;
+    font-weight: bold;
+  }
+
+  footer a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -115,6 +130,10 @@
 </div>
 
 <div id="output">Results will appear here</div>
+
+<footer>
+  Follow me on Instagram: <a href="https://www.instagram.com/mohammad_faizan_khan_/" target="_blank">@mohammad_faizan_khan_</a>
+</footer>
 
 <script>
 function getLocation() {
@@ -181,7 +200,7 @@ async function listNearby() {
         let name = el.tags["name:en"] || el.tags.name || el.tags.amenity;
         let type = el.tags.amenity || "Unknown";
         let distance = getDistance(loc.lat, loc.lon, el.lat, el.lon);
-        let time = Math.ceil(distance / 0.083); // average walking 5 km/h => 0.083 km/min
+        let time = Math.ceil(distance / 0.083);
         let mapsLink = `https://www.google.com/maps/dir/?api=1&destination=${el.lat},${el.lon}`;
         html += `<tr>
           <td><span class="place-link" onclick="window.open('${mapsLink}', '_blank')">${name}</span></td>
