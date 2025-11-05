@@ -3,77 +3,90 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Location Finder</title>
+<title>Smart Location Finder</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
   body {
-    font-family: Arial, sans-serif;
-    background: linear-gradient(135deg, #f0f4f7, #d9e2ec);
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(135deg, #667eea, #764ba2);
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
     margin: 0;
+    color: #fff;
   }
 
   h2 {
+    margin-bottom: 30px;
+    font-size: 2em;
     text-align: center;
-    margin-bottom: 20px;
-    color: #333;
+    text-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+  }
+
+  .controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   input, button {
-    padding: 10px 15px;
+    padding: 12px 20px;
     margin: 10px;
     font-size: 16px;
     border-radius: 8px;
-    border: 1px solid #ccc;
-    outline: none;
-  }
-
-  button {
-    cursor: pointer;
-    background-color: #4CAF50;
-    color: white;
     border: none;
-    transition: background 0.3s;
-  }
-
-  button:hover {
-    background-color: #45a049;
-  }
-
-  #output {
-    margin-top: 20px;
-    padding: 20px;
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
-    width: 90%;
-    max-width: 600px;
-    text-align: center;
-    white-space: pre-wrap;
-    word-wrap: break-word;
+    outline: none;
+    transition: 0.3s;
   }
 
   input[type="text"] {
     width: 250px;
   }
+
+  button {
+    background-color: #ff7e5f;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
+  }
+
+  button:hover {
+    background-color: #feb47b;
+    transform: translateY(-2px);
+  }
+
+  #output {
+    margin-top: 30px;
+    padding: 25px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 15px;
+    box-shadow: 0px 8px 20px rgba(0,0,0,0.3);
+    width: 90%;
+    max-width: 600px;
+    text-align: center;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    color: #fff;
+    font-weight: 500;
+    backdrop-filter: blur(10px);
+  }
 </style>
 </head>
 <body>
 
-<h2>Location Finder</h2>
+<h2>Smart Location Finder</h2>
 
-<!-- Buttons -->
-<button onclick="getZip()">Get My ZIP Code</button>
-<button onclick="getAddress()">Get My Address</button>
-<br>
-<input type="text" id="searchLocation" placeholder="Enter location name">
-<button onclick="searchZip()">Search ZIP by Location</button>
-<button onclick="listNearby()">List Nearby Places</button>
+<div class="controls">
+  <button onclick="getZip()">Get My ZIP Code</button>
+  <button onclick="getAddress()">Get My Address</button>
+  <input type="text" id="searchLocation" placeholder="Enter location name">
+  <button onclick="searchZip()">Search ZIP by Location</button>
+  <button onclick="listNearby()">List Nearby Places</button>
+</div>
 
-<!-- Output -->
 <div id="output">Results will appear here</div>
 
 <script>
@@ -134,7 +147,19 @@ async function searchZip() {
   }
 }
 
-// 4. List Nearby Places (basic using OSM)
+// Haversine formula for distance
+function getDistance(lat1, lon1, lat2, lon2){
+  const R = 6371;
+  const dLat = (lat2-lat1) * Math.PI/180;
+  const dLon = (lon2-lon1) * Math.PI/180;
+  const a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+            Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180) *
+            Math.sin(dLon/2)*Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return (R*c).toFixed(2);
+}
+
+// 4. List Nearby Places (English + Type + Distance)
 async function listNearby() {
   try {
     const loc = await getLocation();
@@ -144,7 +169,10 @@ async function listNearby() {
     if(data.elements.length > 0){
       let list = "Nearby Places (within 1 km):\n";
       data.elements.slice(0,20).forEach(el => {
-        list += `${el.tags.name || el.tags.amenity} (${el.lat.toFixed(5)}, ${el.lon.toFixed(5)})\n`;
+        let name = el.tags["name:en"] || el.tags.name || el.tags.amenity;
+        let type = el.tags.amenity || "Unknown";
+        let distance = getDistance(loc.lat, loc.lon, el.lat, el.lon);
+        list += `${name} - ${type} - ${distance} km\n`;
       });
       document.getElementById('output').innerText = list;
     } else {
