@@ -27,6 +27,7 @@
     background: var(--bg-light);
     transition: all 0.5s ease;
     overflow-x: hidden;
+    position: relative;
   }
 
   body.dark-mode {
@@ -34,7 +35,6 @@
     color: var(--text-dark);
   }
 
-  /* Animated background circles */
   body::before {
     content: '';
     position: absolute;
@@ -57,7 +57,6 @@
     100% { transform: translate(0,0); }
   }
 
-  /* Breathing logo */
   .logo {
     width: 220px;
     height: auto;
@@ -214,7 +213,6 @@
     color: #fff;
     border: 1px solid #fff;
   }
-
 </style>
 </head>
 <body>
@@ -229,7 +227,11 @@
   <button onclick="listNearby()">List Nearby Places</button>
 </div>
 
-<div id="map"></div>
+<div id="map">
+  <iframe id="osm-map" width="100%" height="100%" style="border:0" loading="lazy" allowfullscreen
+    src="https://www.openstreetmap.org/export/embed.html?bbox=46.665,24.705,46.685,24.725&layer=mapnik&marker=24.7136,46.6753"></iframe>
+</div>
+
 <div id="output">Results will appear here</div>
 
 <footer>
@@ -237,32 +239,13 @@
 </footer>
 
 <script>
-let map, markers = [];
-
-function toggleMode() {
-  document.body.classList.toggle('dark-mode');
-}
-
-function initMap(lat=24.7136, lon=46.6753) {
-  map = new google.maps.Map(document.getElementById("map"), {
-    center: { lat, lng: lon },
-    zoom: 15,
-    styles: document.body.classList.contains('dark-mode') ? 
-      [{ elementType: 'geometry', stylers: [{color: '#000'}] }] : null
-  });
-}
-
-function clearMarkers() {
-  markers.forEach(m => m.setMap(null));
-  markers = [];
-}
+function toggleMode() { document.body.classList.toggle('dark-mode'); }
 
 function getLocation() {
   return new Promise((resolve, reject) => {
     if(navigator.geolocation){
-      navigator.geolocation.getCurrentPosition(pos => {
-        resolve({lat: pos.coords.latitude, lon: pos.coords.longitude});
-      }, err => reject("Location access denied or unavailable"));
+      navigator.geolocation.getCurrentPosition(pos => resolve({lat: pos.coords.latitude, lon: pos.coords.longitude}),
+      err => reject("Location access denied or unavailable"));
     } else reject("Geolocation not supported");
   });
 }
@@ -273,7 +256,7 @@ async function getZip() {
     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${loc.lat}&lon=${loc.lon}&format=json`);
     const data = await res.json();
     document.getElementById('output').innerText = "ZIP Code: " + (data.address.postcode || "Not found");
-    initMap(loc.lat, loc.lon);
+    updateMap(loc.lat, loc.lon);
   } catch(err) { document.getElementById('output').innerText = err; }
 }
 
@@ -283,54 +266,52 @@ async function getAddress() {
     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${loc.lat}&lon=${loc.lon}&format=json`);
     const data = await res.json();
     document.getElementById('output').innerText = "Address: " + data.display_name;
-    initMap(loc.lat, loc.lon);
+    updateMap(loc.lat, loc.lon);
   } catch(err) { document.getElementById('output').innerText = err; }
 }
 
 function getDistance(lat1, lon1, lat2, lon2){
   const R = 6371;
-  const dLat = (lat2-lat1) * Math.PI/180;
-  const dLon = (lon2-lon1) * Math.PI/180;
+  const dLat = (lat2-lat1)*Math.PI/180;
+  const dLon = (lon2-lon1)*Math.PI/180;
   const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const c = 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   return (R*c).toFixed(2);
 }
 
 async function listNearby() {
   try {
     const loc = await getLocation();
-    initMap(loc.lat, loc.lon);
+    updateMap(loc.lat, loc.lon);
     const query = `[out:json];node(around:1000,${loc.lat},${loc.lon})[amenity];out;`;
     const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
     const data = await res.json();
-    clearMarkers();
     if(data.elements.length > 0){
       let html = `<table>
         <tr><th>Place Name</th><th>Type</th><th>Distance (km)</th><th>Walking Time (min)</th></tr>`;
-      data.elements.slice(0,20).forEach((el, i) => {
+      data.elements.slice(0,20).forEach((el,i)=>{
         let name = el.tags["name:en"] || el.tags.name || el.tags.amenity;
         let type = el.tags.amenity || "Unknown";
         let distance = getDistance(loc.lat, loc.lon, el.lat, el.lon);
         let time = Math.ceil(distance / 0.083);
-        let mapsLink = `https://www.google.com/maps/dir/?api=1&destination=${el.lat},${el.lon}`;
-
-        html += `<tr style="animation-delay:${i*0.05}s"><td><span class="place-link" onclick="window.open('${mapsLink}', '_blank')">${name}</span></td><td>${type}</td><td>${distance}</td><td>${time}</td></tr>`;
-
-        // Add marker
-        let marker = new google.maps.Marker({
-          position: {lat: el.lat, lng: el.lon},
-          map: map,
-          title: name
-        });
-        markers.push(marker);
+        let osmLink = `https://www.openstreetmap.org/?mlat=${el.lat}&mlon=${el.lon}#map=18/${el.lat}/${el.lon}`;
+        html += `<tr style="animation-delay:${i*0.05}s">
+          <td><span class="place-link" onclick="window.open('${osmLink}','_blank')">${name}</span></td>
+          <td>${type}</td>
+          <td>${distance}</td>
+          <td>${time}</td>
+        </tr>`;
       });
       html += `</table>`;
       document.getElementById('output').innerHTML = html;
     } else { document.getElementById('output').innerText = "No nearby places found"; }
-  } catch(err) { document.getElementById('output').innerText = "Failed to fetch nearby places"; }
+  } catch(err){ document.getElementById('output').innerText = "Failed to fetch nearby places"; }
+}
+
+function updateMap(lat, lon){
+  const mapFrame = document.getElementById('osm-map');
+  mapFrame.src = `https://www.openstreetmap.org/export/embed.html?bbox=${lon-0.01},${lat-0.01},${lon+0.01},${lat+0.01}&layer=mapnik&marker=${lat},${lon}`;
 }
 </script>
-
-<script async src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY"></script>
 </body>
 </html>
