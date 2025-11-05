@@ -3,43 +3,44 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Location Finder</title>
+<title>Where Am I?</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
 
   body {
     font-family: 'Roboto', sans-serif;
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background-color: #f9f9f9;
+    background-image: radial-gradient(circle at 50% 50%, #e0e0e0 1px, transparent 1px);
+    background-size: 40px 40px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
     min-height: 100vh;
     margin: 0;
-    color: #fff;
+    color: #333;
   }
 
-  /* Breathing logo */
-  .breathing-logo {
-    width: 150px;
-    height: 150px;
-    border-radius: 20px;
-    margin-bottom: 20px;
+  /* Logo */
+  .logo {
+    width: 250px; /* rectangle proportion */
+    height: auto;
+    margin: 20px 0;
     animation: breathe 2s infinite;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
   }
 
   @keyframes breathe {
     0% { transform: scale(1); opacity: 0.9; }
-    50% { transform: scale(1.1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 1; }
     100% { transform: scale(1); opacity: 0.9; }
   }
 
-  h2 {
-    margin-bottom: 20px;
+  h1 {
     font-size: 2em;
+    margin-bottom: 20px;
     text-align: center;
-    text-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+    color: #222;
   }
 
   .controls {
@@ -53,7 +54,7 @@
     margin: 10px;
     font-size: 16px;
     border-radius: 8px;
-    border: none;
+    border: 1px solid #ccc;
     outline: none;
     transition: 0.3s;
   }
@@ -63,40 +64,48 @@
   }
 
   button {
-    background-color: #ff7e5f;
+    background-color: #4CAF50;
     color: white;
     cursor: pointer;
-    box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
   }
 
   button:hover {
-    background-color: #feb47b;
+    background-color: #45a049;
     transform: translateY(-2px);
   }
 
   #output {
     margin-top: 30px;
     padding: 25px;
-    background: rgba(255,255,255,0.1);
+    background: white;
     border-radius: 15px;
-    box-shadow: 0px 8px 20px rgba(0,0,0,0.3);
+    box-shadow: 0px 8px 20px rgba(0,0,0,0.1);
     width: 90%;
     max-width: 600px;
-    text-align: center;
+    text-align: left;
     white-space: pre-wrap;
     word-wrap: break-word;
-    color: #fff;
+    color: #333;
     font-weight: 500;
-    backdrop-filter: blur(10px);
+  }
+
+  /* Nearby place links */
+  .place-link {
+    color: #1a73e8;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  .place-link:hover {
+    color: #155ab6;
   }
 </style>
 </head>
 <body>
 
-<!-- Breathing Logo -->
-<img src="https://i.ibb.co/jPQz0mKf/Screenshot-2025-11-05-at-8-24-36-PM.png" class="breathing-logo" alt="Logo">
+<!-- Logo -->
+<img src="https://i.ibb.co/jPQz0mKf/Screenshot-2025-11-05-at-8-24-36-PM.png" class="logo" alt="Logo">
 
-<h2>Smart Location Finder</h2>
+<h1>Where Am I?</h1>
 
 <div class="controls">
   <button onclick="getZip()">Get My ZIP Code</button>
@@ -157,7 +166,7 @@ async function searchZip() {
     if(data.length > 0){
       const item = data[0];
       const zip = item.address.postcode || "Not found";
-      document.getElementById('output').innerText = `Location: ${item.display_name}\nZIP Code: ${zip}`;
+      document.getElementById('output').innerHTML = `Location: ${item.display_name}<br>ZIP Code: ${zip}`;
     } else {
       document.getElementById('output').innerText = "No results found";
     }
@@ -178,7 +187,7 @@ function getDistance(lat1, lon1, lat2, lon2){
   return (R*c).toFixed(2);
 }
 
-// 4. List Nearby Places (English + Type + Distance)
+// 4. List Nearby Places with Google Maps link
 async function listNearby() {
   try {
     const loc = await getLocation();
@@ -186,14 +195,15 @@ async function listNearby() {
     const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
     const data = await res.json();
     if(data.elements.length > 0){
-      let list = "Nearby Places (within 1 km):\n";
+      let html = "Nearby Places (within 1 km):<br>";
       data.elements.slice(0,20).forEach(el => {
         let name = el.tags["name:en"] || el.tags.name || el.tags.amenity;
         let type = el.tags.amenity || "Unknown";
         let distance = getDistance(loc.lat, loc.lon, el.lat, el.lon);
-        list += `${name} - ${type} - ${distance} km\n`;
+        let mapsLink = `https://www.google.com/maps/dir/?api=1&destination=${el.lat},${el.lon}`;
+        html += `<span class="place-link" onclick="window.open('${mapsLink}', '_blank')">${name}</span> - ${type} - ${distance} km<br>`;
       });
-      document.getElementById('output').innerText = list;
+      document.getElementById('output').innerHTML = html;
     } else {
       document.getElementById('output').innerText = "No nearby places found";
     }
