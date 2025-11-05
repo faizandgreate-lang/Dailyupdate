@@ -7,17 +7,31 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap');
 
+  :root {
+    --bg-light: #fff;
+    --bg-dark: #000;
+    --text-light: #000;
+    --text-dark: #fff;
+    --button-bg-light: #fff;
+    --button-bg-dark: #222;
+  }
+
   body {
     font-family: 'Merriweather', serif;
     margin: 0;
-    color: #000;
+    color: var(--text-light);
     display: flex;
     flex-direction: column;
     align-items: center;
     min-height: 100vh;
-    background: #fff;
-    overflow: hidden;
-    position: relative;
+    background: var(--bg-light);
+    transition: all 0.5s ease;
+    overflow-x: hidden;
+  }
+
+  body.dark-mode {
+    background: var(--bg-dark);
+    color: var(--text-dark);
   }
 
   /* Animated background circles */
@@ -30,6 +44,11 @@
     background-size: 60px 60px;
     animation: moveBG 20s linear infinite;
     z-index: -1;
+    transition: all 0.5s ease;
+  }
+
+  body.dark-mode::before {
+    background: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
   }
 
   @keyframes moveBG {
@@ -46,7 +65,10 @@
     border-radius: 8px;
     box-shadow: 0 6px 18px rgba(0,0,0,0.2);
     animation: breathe 2s infinite;
+    transition: filter 0.5s ease;
   }
+
+  body.dark-mode .logo { filter: brightness(0.8); }
 
   @keyframes breathe {
     0%,100% { transform: scale(1); opacity: 0.9; }
@@ -57,6 +79,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    z-index: 1;
   }
 
   button {
@@ -66,10 +89,16 @@
     border-radius: 6px;
     border: 1px solid #000;
     cursor: pointer;
-    background-color: #fff;
-    color: #000;
+    background-color: var(--button-bg-light);
+    color: var(--text-light);
     font-weight: bold;
     transition: all 0.3s ease;
+  }
+
+  body.dark-mode button {
+    background-color: var(--button-bg-dark);
+    color: var(--text-dark);
+    border: 1px solid #fff;
   }
 
   button:hover {
@@ -78,10 +107,20 @@
     transform: translateY(-2px);
   }
 
-  #output {
+  #map {
     margin-top: 30px;
-    padding: 25px;
-    background: #fff;
+    width: 90%;
+    max-width: 750px;
+    height: 300px;
+    border-radius: 12px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+    overflow: hidden;
+  }
+
+  #output {
+    margin-top: 20px;
+    padding: 20px;
+    background: var(--button-bg-light);
     border-radius: 12px;
     box-shadow: 0 6px 16px rgba(0,0,0,0.1);
     width: 90%;
@@ -89,12 +128,24 @@
     text-align: left;
     font-weight: 500;
     overflow-x: auto;
+    transition: all 0.5s ease;
+  }
+
+  body.dark-mode #output {
+    background: var(--button-bg-dark);
   }
 
   table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 10px;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.5s forwards;
+  }
+
+  @keyframes fadeInUp {
+    to { opacity: 1; transform: translateY(0); }
   }
 
   th, td {
@@ -103,42 +154,72 @@
     border-bottom: 1px solid #000;
   }
 
-  th {
-    background-color: #eee;
-    font-weight: 700;
-  }
+  body.dark-mode th, body.dark-mode td { border-color: #fff; }
+
+  th { background-color: #eee; font-weight: 700; }
+  body.dark-mode th { background-color: #222; }
 
   tr:nth-child(even) { background-color: #f9f9f9; }
+  body.dark-mode tr:nth-child(even) { background-color: #111; }
+
   tr:hover { background-color: #000; color: #fff; }
+  body.dark-mode tr:hover { background-color: #fff; color: #000; }
 
   .place-link {
     color: #000;
     cursor: pointer;
     text-decoration: underline;
   }
-  .place-link:hover { color: #fff; }
+  body.dark-mode .place-link { color: #fff; }
+  .place-link:hover { color: #555; }
 
   footer {
     margin-top: 50px;
     padding: 20px;
     text-align: center;
     font-size: 16px;
-    color: #000;
     border-top: 1px solid #000;
     width: 100%;
-    background-color: #fff;
+    background-color: var(--bg-light);
+    transition: all 0.5s ease;
+  }
+
+  body.dark-mode footer {
+    border-top: 1px solid #fff;
+    background-color: var(--bg-dark);
+    color: var(--text-dark);
   }
 
   footer a {
-    color: #000;
+    color: inherit;
     font-weight: bold;
     text-decoration: none;
   }
   footer a:hover { text-decoration: underline; }
 
+  .toggle-mode {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: 1px solid #000;
+    background: #fff;
+    cursor: pointer;
+    font-weight: bold;
+    z-index: 1000;
+  }
+  body.dark-mode .toggle-mode {
+    background: #000;
+    color: #fff;
+    border: 1px solid #fff;
+  }
+
 </style>
 </head>
 <body>
+
+<button class="toggle-mode" onclick="toggleMode()">Dark Mode</button>
 
 <img src="https://i.ibb.co/jPQz0mKf/Screenshot-2025-11-05-at-8-24-36-PM.png" class="logo" alt="Logo">
 
@@ -148,6 +229,7 @@
   <button onclick="listNearby()">List Nearby Places</button>
 </div>
 
+<div id="map"></div>
 <div id="output">Results will appear here</div>
 
 <footer>
@@ -155,6 +237,26 @@
 </footer>
 
 <script>
+let map, markers = [];
+
+function toggleMode() {
+  document.body.classList.toggle('dark-mode');
+}
+
+function initMap(lat=24.7136, lon=46.6753) {
+  map = new google.maps.Map(document.getElementById("map"), {
+    center: { lat, lng: lon },
+    zoom: 15,
+    styles: document.body.classList.contains('dark-mode') ? 
+      [{ elementType: 'geometry', stylers: [{color: '#000'}] }] : null
+  });
+}
+
+function clearMarkers() {
+  markers.forEach(m => m.setMap(null));
+  markers = [];
+}
+
 function getLocation() {
   return new Promise((resolve, reject) => {
     if(navigator.geolocation){
@@ -171,6 +273,7 @@ async function getZip() {
     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${loc.lat}&lon=${loc.lon}&format=json`);
     const data = await res.json();
     document.getElementById('output').innerText = "ZIP Code: " + (data.address.postcode || "Not found");
+    initMap(loc.lat, loc.lon);
   } catch(err) { document.getElementById('output').innerText = err; }
 }
 
@@ -180,6 +283,7 @@ async function getAddress() {
     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${loc.lat}&lon=${loc.lon}&format=json`);
     const data = await res.json();
     document.getElementById('output').innerText = "Address: " + data.display_name;
+    initMap(loc.lat, loc.lon);
   } catch(err) { document.getElementById('output').innerText = err; }
 }
 
@@ -195,24 +299,30 @@ function getDistance(lat1, lon1, lat2, lon2){
 async function listNearby() {
   try {
     const loc = await getLocation();
+    initMap(loc.lat, loc.lon);
     const query = `[out:json];node(around:1000,${loc.lat},${loc.lon})[amenity];out;`;
     const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
     const data = await res.json();
+    clearMarkers();
     if(data.elements.length > 0){
       let html = `<table>
         <tr><th>Place Name</th><th>Type</th><th>Distance (km)</th><th>Walking Time (min)</th></tr>`;
-      data.elements.slice(0,20).forEach(el => {
+      data.elements.slice(0,20).forEach((el, i) => {
         let name = el.tags["name:en"] || el.tags.name || el.tags.amenity;
         let type = el.tags.amenity || "Unknown";
         let distance = getDistance(loc.lat, loc.lon, el.lat, el.lon);
         let time = Math.ceil(distance / 0.083);
         let mapsLink = `https://www.google.com/maps/dir/?api=1&destination=${el.lat},${el.lon}`;
-        html += `<tr>
-          <td><span class="place-link" onclick="window.open('${mapsLink}', '_blank')">${name}</span></td>
-          <td>${type}</td>
-          <td>${distance}</td>
-          <td>${time}</td>
-        </tr>`;
+
+        html += `<tr style="animation-delay:${i*0.05}s"><td><span class="place-link" onclick="window.open('${mapsLink}', '_blank')">${name}</span></td><td>${type}</td><td>${distance}</td><td>${time}</td></tr>`;
+
+        // Add marker
+        let marker = new google.maps.Marker({
+          position: {lat: el.lat, lng: el.lon},
+          map: map,
+          title: name
+        });
+        markers.push(marker);
       });
       html += `</table>`;
       document.getElementById('output').innerHTML = html;
@@ -221,5 +331,6 @@ async function listNearby() {
 }
 </script>
 
+<script async src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY"></script>
 </body>
 </html>
