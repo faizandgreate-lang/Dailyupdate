@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Where Am I?</title>
+<title>Smart Location Finder</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
 
@@ -20,9 +20,8 @@
     color: #333;
   }
 
-  /* Logo */
   .logo {
-    width: 250px; /* rectangle proportion */
+    width: 250px;
     height: auto;
     margin: 20px 0;
     animation: breathe 2s infinite;
@@ -34,13 +33,6 @@
     0% { transform: scale(1); opacity: 0.9; }
     50% { transform: scale(1.05); opacity: 1; }
     100% { transform: scale(1); opacity: 0.9; }
-  }
-
-  h1 {
-    font-size: 2em;
-    margin-bottom: 20px;
-    text-align: center;
-    color: #222;
   }
 
   .controls {
@@ -59,9 +51,7 @@
     transition: 0.3s;
   }
 
-  input[type="text"] {
-    width: 250px;
-  }
+  input[type="text"] { width: 250px; }
 
   button {
     background-color: #4CAF50;
@@ -76,36 +66,45 @@
 
   #output {
     margin-top: 30px;
-    padding: 25px;
+    padding: 20px;
     background: white;
     border-radius: 15px;
     box-shadow: 0px 8px 20px rgba(0,0,0,0.1);
     width: 90%;
-    max-width: 600px;
+    max-width: 700px;
     text-align: left;
-    white-space: pre-wrap;
-    word-wrap: break-word;
     color: #333;
     font-weight: 500;
+    overflow-x: auto;
   }
 
-  /* Nearby place links */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th, td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+  }
+
+  th {
+    background-color: #f0f0f0;
+  }
+
   .place-link {
     color: #1a73e8;
     cursor: pointer;
     text-decoration: underline;
   }
-  .place-link:hover {
-    color: #155ab6;
-  }
+
+  .place-link:hover { color: #155ab6; }
 </style>
 </head>
 <body>
 
-<!-- Logo -->
 <img src="https://i.ibb.co/jPQz0mKf/Screenshot-2025-11-05-at-8-24-36-PM.png" class="logo" alt="Logo">
-
-<h1>Where Am I?</h1>
 
 <div class="controls">
   <button onclick="getZip()">Get My ZIP Code</button>
@@ -118,7 +117,6 @@
 <div id="output">Results will appear here</div>
 
 <script>
-// Helper: Get user location
 function getLocation() {
   return new Promise((resolve, reject) => {
     if(navigator.geolocation){
@@ -129,37 +127,27 @@ function getLocation() {
   });
 }
 
-// 1. Get ZIP Code
 async function getZip() {
   try {
     const loc = await getLocation();
     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${loc.lat}&lon=${loc.lon}&format=json`);
     const data = await res.json();
     document.getElementById('output').innerText = "ZIP Code: " + (data.address.postcode || "Not found");
-  } catch(err) {
-    document.getElementById('output').innerText = err;
-  }
+  } catch(err) { document.getElementById('output').innerText = err; }
 }
 
-// 2. Get Address
 async function getAddress() {
   try {
     const loc = await getLocation();
     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${loc.lat}&lon=${loc.lon}&format=json`);
     const data = await res.json();
     document.getElementById('output').innerText = "Address: " + data.display_name;
-  } catch(err) {
-    document.getElementById('output').innerText = err;
-  }
+  } catch(err) { document.getElementById('output').innerText = err; }
 }
 
-// 3. Search ZIP by Location Name
 async function searchZip() {
   const query = document.getElementById('searchLocation').value.trim();
-  if(!query){
-    document.getElementById('output').innerText = "Please enter a location name";
-    return;
-  }
+  if(!query){ document.getElementById('output').innerText = "Please enter a location name"; return; }
   try {
     const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1`);
     const data = await res.json();
@@ -167,27 +155,19 @@ async function searchZip() {
       const item = data[0];
       const zip = item.address.postcode || "Not found";
       document.getElementById('output').innerHTML = `Location: ${item.display_name}<br>ZIP Code: ${zip}`;
-    } else {
-      document.getElementById('output').innerText = "No results found";
-    }
-  } catch(err) {
-    document.getElementById('output').innerText = err;
-  }
+    } else { document.getElementById('output').innerText = "No results found"; }
+  } catch(err) { document.getElementById('output').innerText = err; }
 }
 
-// Haversine formula for distance
 function getDistance(lat1, lon1, lat2, lon2){
   const R = 6371;
   const dLat = (lat2-lat1) * Math.PI/180;
   const dLon = (lon2-lon1) * Math.PI/180;
-  const a = Math.sin(dLat/2)*Math.sin(dLat/2) +
-            Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180) *
-            Math.sin(dLon/2)*Math.sin(dLon/2);
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   return (R*c).toFixed(2);
 }
 
-// 4. List Nearby Places with Google Maps link
 async function listNearby() {
   try {
     const loc = await getLocation();
@@ -195,21 +175,25 @@ async function listNearby() {
     const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
     const data = await res.json();
     if(data.elements.length > 0){
-      let html = "Nearby Places (within 1 km):<br>";
+      let html = `<table>
+        <tr><th>Place Name</th><th>Type</th><th>Distance (km)</th><th>Walking Time (min)</th></tr>`;
       data.elements.slice(0,20).forEach(el => {
         let name = el.tags["name:en"] || el.tags.name || el.tags.amenity;
         let type = el.tags.amenity || "Unknown";
         let distance = getDistance(loc.lat, loc.lon, el.lat, el.lon);
+        let time = Math.ceil(distance / 0.083); // average walking 5 km/h => 0.083 km/min
         let mapsLink = `https://www.google.com/maps/dir/?api=1&destination=${el.lat},${el.lon}`;
-        html += `<span class="place-link" onclick="window.open('${mapsLink}', '_blank')">${name}</span> - ${type} - ${distance} km<br>`;
+        html += `<tr>
+          <td><span class="place-link" onclick="window.open('${mapsLink}', '_blank')">${name}</span></td>
+          <td>${type}</td>
+          <td>${distance}</td>
+          <td>${time}</td>
+        </tr>`;
       });
+      html += `</table>`;
       document.getElementById('output').innerHTML = html;
-    } else {
-      document.getElementById('output').innerText = "No nearby places found";
-    }
-  } catch(err) {
-    document.getElementById('output').innerText = "Failed to fetch nearby places";
-  }
+    } else { document.getElementById('output').innerText = "No nearby places found"; }
+  } catch(err) { document.getElementById('output').innerText = "Failed to fetch nearby places"; }
 }
 </script>
 
