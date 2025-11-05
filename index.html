@@ -9,24 +9,49 @@
 
   body {
     font-family: 'Merriweather', serif;
-    background-color: #f4f4f4;
+    margin: 0;
+    color: #000;
     display: flex;
     flex-direction: column;
     align-items: center;
     min-height: 100vh;
-    margin: 0;
-    color: #333;
+    background: #fff;
+    overflow: hidden;
+    position: relative;
   }
 
+  /* Animated background circles */
+  body::before {
+    content: '';
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(0,0,0,0.05) 1px, transparent 1px);
+    background-size: 60px 60px;
+    animation: moveBG 20s linear infinite;
+    z-index: -1;
+  }
+
+  @keyframes moveBG {
+    0% { transform: translate(0,0); }
+    50% { transform: translate(-50px,50px); }
+    100% { transform: translate(0,0); }
+  }
+
+  /* Breathing logo */
   .logo {
     width: 220px;
     height: auto;
     margin: 30px 0;
     border-radius: 8px;
     box-shadow: 0 6px 18px rgba(0,0,0,0.2);
-    transition: transform 0.3s;
+    animation: breathe 2s infinite;
   }
-  .logo:hover { transform: scale(1.05); }
+
+  @keyframes breathe {
+    0%,100% { transform: scale(1); opacity: 0.9; }
+    50% { transform: scale(1.05); opacity: 1; }
+  }
 
   .controls {
     display: flex;
@@ -39,19 +64,17 @@
     margin: 12px;
     font-size: 16px;
     border-radius: 6px;
-    border: 1px solid #999;
+    border: 1px solid #000;
     cursor: pointer;
     background-color: #fff;
-    color: #444;
+    color: #000;
     font-weight: bold;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     transition: all 0.3s ease;
   }
 
   button:hover {
-    background-color: #4CAF50;
+    background-color: #000;
     color: #fff;
-    box-shadow: 0 6px 14px rgba(0,0,0,0.2);
     transform: translateY(-2px);
   }
 
@@ -77,38 +100,42 @@
   th, td {
     padding: 12px 10px;
     text-align: left;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid #000;
   }
 
   th {
-    background-color: #f8f8f8;
+    background-color: #eee;
     font-weight: 700;
   }
 
+  tr:nth-child(even) { background-color: #f9f9f9; }
+  tr:hover { background-color: #000; color: #fff; }
+
   .place-link {
-    color: #1a73e8;
+    color: #000;
     cursor: pointer;
     text-decoration: underline;
   }
-  .place-link:hover { color: #155ab6; }
+  .place-link:hover { color: #fff; }
 
   footer {
     margin-top: 50px;
     padding: 20px;
     text-align: center;
     font-size: 16px;
-    color: #555;
-    border-top: 1px solid #ddd;
+    color: #000;
+    border-top: 1px solid #000;
     width: 100%;
-    background-color: #fafafa;
+    background-color: #fff;
   }
 
   footer a {
-    color: #E1306C;
+    color: #000;
     font-weight: bold;
     text-decoration: none;
   }
   footer a:hover { text-decoration: underline; }
+
 </style>
 </head>
 <body>
