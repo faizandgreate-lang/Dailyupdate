@@ -41,22 +41,17 @@
     align-items: center;
   }
 
-  input, button {
+  button {
     padding: 12px 20px;
     margin: 10px;
     font-size: 16px;
     border-radius: 8px;
     border: 1px solid #ccc;
     outline: none;
-    transition: 0.3s;
-  }
-
-  input[type="text"] { width: 250px; }
-
-  button {
+    cursor: pointer;
     background-color: #4CAF50;
     color: white;
-    cursor: pointer;
+    transition: 0.3s;
   }
 
   button:hover {
@@ -99,7 +94,6 @@
 
   .place-link:hover { color: #155ab6; }
 
-  /* Footer */
   footer {
     margin-top: 40px;
     padding: 20px;
@@ -109,7 +103,7 @@
   }
 
   footer a {
-    color: #E1306C; /* Instagram color */
+    color: #E1306C; 
     text-decoration: none;
     font-weight: bold;
   }
@@ -124,8 +118,6 @@
 <div class="controls">
   <button onclick="getZip()">Get My ZIP Code</button>
   <button onclick="getAddress()">Get My Address</button>
-  <input type="text" id="searchLocation" placeholder="Enter location name">
-  <button onclick="searchZip()">Search ZIP by Location</button>
   <button onclick="listNearby()">List Nearby Places</button>
 </div>
 
@@ -161,20 +153,6 @@ async function getAddress() {
     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${loc.lat}&lon=${loc.lon}&format=json`);
     const data = await res.json();
     document.getElementById('output').innerText = "Address: " + data.display_name;
-  } catch(err) { document.getElementById('output').innerText = err; }
-}
-
-async function searchZip() {
-  const query = document.getElementById('searchLocation').value.trim();
-  if(!query){ document.getElementById('output').innerText = "Please enter a location name"; return; }
-  try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1`);
-    const data = await res.json();
-    if(data.length > 0){
-      const item = data[0];
-      const zip = item.address.postcode || "Not found";
-      document.getElementById('output').innerHTML = `Location: ${item.display_name}<br>ZIP Code: ${zip}`;
-    } else { document.getElementById('output').innerText = "No results found"; }
   } catch(err) { document.getElementById('output').innerText = err; }
 }
 
